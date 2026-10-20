@@ -1,129 +1,189 @@
-<p align="center">
-    <a href="https://sylius.com" target="_blank">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://media.sylius.com/sylius-logo-800-dark.png">
-          <source media="(prefers-color-scheme: light)" srcset="https://media.sylius.com/sylius-logo-800.png">
-          <img alt="Sylius Logo." src="https://media.sylius.com/sylius-logo-800.png">
-        </picture>
-    </a>
-</p>
+# Zangra Sylius Barcode Print Plugin
 
-<h1 align="center">Plugin Skeleton</h1>
-
-<p align="center">Skeleton for starting Sylius plugins.</p>
+Sylius plugin (`zangra/sylius-barcode-print-plugin`) that prints product labels in ZPL on a TSC TTP-2410MU label printer (203 dpi, 50.8 x 25.4 mm, raw TCP port 9100).
 
 ## Documentation
 
-For a comprehensive guide on Sylius Plugins development please go to Sylius documentation,
-there you will find the <a href="https://docs.sylius.com/plugins-development-guide/how-to-create-a-plugin-for-sylius">Plugin Development Guide</a> - it's a great place to start.
+### What it does
 
-For more information about the **Test Application** included in the skeleton, please refer to the [Sylius documentation](https://docs.sylius.com/plugins-development-guide/test-application).
+- **Label templates**: a ZPL file with `{{variable}}` tokens plus a table of variable definitions (key, label, type `text` / `ean13` / `icons`, default, required). Managed in the admin under Configuration > Label templates.
+- **Printers**: host, port, transport and agent URL, managed in the admin under Configuration > Label printers.
+- **Print button**: a hookable Twig component (`zangra_barcode_print:print_button`) that opens a modal with the template list (only when more than one template is enabled), the printer, the variable fields and the quantity.
+- **Print agent**: a small Go program (`agent/`) that runs on each Windows PC and forwards the ZPL to the printer.
 
-## Quickstart Installation
+### How a label gets printed
 
-Run `composer create-project sylius/plugin-skeleton ProjectName`.
+Sylius usually runs remotely and cannot reach the printer, and a browser cannot open raw TCP. So:
 
-### Traditional
+```
+Browser --1 XHR--> Sylius (validates, renders ZPL) --2 zpl--> Browser
+Browser --3 POST http://127.0.0.1:9101/print--> agent on the PC --4 TCP 9100--> printer
+```
 
-1. From the plugin skeleton root directory, run the following commands:
+- Transport `local_agent`: the endpoint `POST /admin/barcode-print/render` returns `{zpl, agentUrl, host, port}` and the browser sends it to the agent.
+- Transport `server_tcp`: Sylius opens the TCP connection to the printer itself and returns `{status: sent}`. Use it only when Sylius can reach the printer (dev, VPN).
 
-    ```bash
-    (cd vendor/sylius/test-application && yarn install)
-    (cd vendor/sylius/test-application && yarn build)
-    vendor/bin/console assets:install
-   
-    vendor/bin/console doctrine:database:create
-    vendor/bin/console doctrine:migrations:migrate -n
-    # Optionally load data fixtures
-    vendor/bin/console sylius:fixtures:load -n
+See [agent/README.md](agent/README.md) for the Windows agent (build, `agent.json`, running it as a service).
+
+### Template format
+
+Use a ZPL file with tokens, for example `resources/labels/cable-label.zpl`:
+
+```
+^FO15,8
+^A0N,18,18
+^FD{{code}}^FS
+...
+^PQ{{quantity}},0,1,N
+```
+
+- `{{quantity}}` is built in (1 to 999). Every other token needs a variable definition, which is validated when the template is saved.
+- `ean13` values must be 13 digits with a valid check digit.
+- `^`, `~` and control characters are stripped from text values.
+- `icons` accepts `ce` and `weee`. They are placed in slots starting at x=275.
+- The template path is relative to the templates directory and cannot leave it.
+
+### Using the print button
+
+```twig
+{# the product variant page is already wired in zangra-sylius #}
+{{ component('zangra_barcode_print:print_button', {
+    defaults: {code: resource.code, ean13: resource.ean.code},
+    templateCode: 'cable'
+}) }}
+```
+
+`defaults` (variable key => value) prefills the form and `templateCode` (optional) limits the choice to one template. In Sylius admin, hook it into a twig hook such as `sylius_admin.product_variant.update.content.header.title_block.actions`.
+
+## Installation
+
+Requirements: PHP ^8.2, Sylius ^2.0 (tested with ^2.2).
+
+1. Install the package. While it is not on Packagist, add a repository to the `composer.json` of your Sylius project, for example a path repository:
+
+    ```json
+    "repositories": [
+        {"type": "path", "url": "../sylius-barcode-print-plugin", "options": {"symlink": true}}
+    ]
     ```
 
-To be able to set up a plugin's database, remember to configure your database credentials in `tests/TestApplication/.env` and `tests/TestApplication/.env.test`.
+    ```bash
+    composer require zangra/sylius-barcode-print-plugin:@dev
+    ```
 
-2. Run your local server:
+2. Register the plugin in `config/bundles.php`:
 
-      ```bash
-      symfony server:ca:install
-      symfony server:start -d
-      ```
+    ```php
+    Zangra\SyliusBarcodePrintPlugin\ZangraSyliusBarcodePrintPlugin::class => ['all' => true],
+    ```
 
-3. Open your browser and navigate to `https://localhost:8000`.
+3. Import the plugin configuration in `config/packages/_sylius.yaml`:
 
-### Docker
+    ```yaml
+    imports:
+        - { resource: "@ZangraSyliusBarcodePrintPlugin/config/config.yaml" }
+    ```
 
-1. Execute `make init` to initialize the container and install the dependencies.
+4. Import the admin routes in `config/routes/admin/barcode_print.yaml` (or any routes file loaded under the admin prefix):
 
-2. Execute `make database-init` to create the database and run migrations.
+    ```yaml
+    zangra_barcode_print_admin:
+        resource: "@ZangraSyliusBarcodePrintPlugin/config/routes/admin.yaml"
+    ```
 
-3. (Optional) Execute `make load-fixtures` to load the fixtures.
+5. Set the templates directory in `config/packages/zangra_barcode_print.yaml` (default `%kernel.project_dir%/labels`), and copy `resources/labels/cable-label.zpl` into it:
 
-4. Your app is available at `http://localhost`.
+    ```yaml
+    zangra_sylius_barcode_print:
+        templates_path: '%kernel.project_dir%/labels'
+    ```
 
-## Usage
+6. Run the migration (creates the `zangra_barcode_*` tables):
 
-### Running plugin tests
+    ```bash
+    bin/console doctrine:migrations:migrate
+    ```
 
-  - PHPUnit
+7. Seed the example `cable` template and the `tsc-atelier` printer (safe to run twice):
+
+    ```bash
+    bin/console zangra:barcode-print:install-example
+    # options: --printer-host=172.16.0.22 --printer-port=9100 --transport=local_agent|server_tcp
+    ```
+
+8. For `local_agent` printers, build and install the agent on each Windows PC. See [agent/README.md](agent/README.md).
+
+## Setup and run the tests
+
+### Setup
+
+The tests use the Sylius test application from `sylius/test-application`.
+
+```bash
+composer install
+```
+
+With Docker instead of a local PHP (needs the `dom`, `xmlwriter`, `intl` and `pdo` extensions):
+
+```bash
+make init
+```
+
+Functional tests and Behat need a database. Set your credentials in `tests/TestApplication/.env` and `tests/TestApplication/.env.test`, then:
+
+```bash
+(cd vendor/sylius/test-application && yarn install && yarn build)
+vendor/bin/console assets:install
+vendor/bin/console doctrine:database:create
+vendor/bin/console doctrine:migrations:migrate -n
+```
+
+or run `composer test-app-init`, or `make database-init` with Docker.
+
+### Run the tests
+
+- PHPUnit, unit tests only (renderer, icons, EAN13, transport, validators; no database needed):
+
+    ```bash
+    vendor/bin/phpunit --testsuite unit
+    ```
+
+- PHPUnit, everything (adds the functional tests for the admin CRUD and the print endpoint):
 
     ```bash
     vendor/bin/phpunit
     ```
 
-  - Behat (non-JS scenarios)
+- Behat (non-JS scenarios):
 
     ```bash
     vendor/bin/behat --strict --tags="~@javascript&&~@mink:chromedriver"
     ```
 
-  - Behat (JS scenarios)
- 
-    1. [Install Symfony CLI command](https://symfony.com/download).
- 
-    2. Start Headless Chrome:
-    
-      ```bash
-      google-chrome-stable --enable-automation --disable-background-networking --no-default-browser-check --no-first-run --disable-popup-blocking --disable-default-apps --allow-insecure-localhost --disable-translate --disable-extensions --no-sandbox --enable-features=Metal --headless --remote-debugging-port=9222 --window-size=2880,1800 --proxy-server='direct://' --proxy-bypass-list='*' http://127.0.0.1
-      ```
-    
-    3. Install SSL certificates (only once needed) and run test application's webserver on `127.0.0.1:8080`:
-    
-      ```bash
-      symfony server:ca:install
-      APP_ENV=test symfony server:start --port=8080 --daemon
-      ```
-    
-    4. Run Behat:
-    
-      ```bash
-      vendor/bin/behat --strict --tags="@javascript,@mink:chromedriver"
-      ```
-    
-  - Static Analysis
-      
-    - PHPStan
-    
-      ```bash
-      vendor/bin/phpstan analyse -c phpstan.neon -l max src/  
-      ```
+- Static analysis and coding standard:
 
-  - Coding Standard
-  
     ```bash
+    vendor/bin/phpstan analyse -c phpstan.neon
     vendor/bin/ecs check
     ```
 
-### Opening Sylius with your plugin
-
-- Using `test` environment:
+- Go agent (Go 1.21 or newer, standard library only):
 
     ```bash
-    APP_ENV=test vendor/bin/console sylius:fixtures:load -n
-    APP_ENV=test symfony server:start -d
+    cd agent && go vet ./... && go test ./...
     ```
-    
-- Using `dev` environment:
 
-    ```bash
-    vendor/bin/console sylius:fixtures:load -n
-    symfony server:start -d
-    ```
+With Docker, prefix commands with `docker compose run --rm php`, for example `docker compose run --rm php vendor/bin/phpunit --testsuite unit`.
+
+### Try it in the test application
+
+```bash
+APP_ENV=test vendor/bin/console sylius:fixtures:load -n
+APP_ENV=test symfony server:start -d
+```
+
+Then open the admin, go to Configuration > Label templates and Label printers.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
