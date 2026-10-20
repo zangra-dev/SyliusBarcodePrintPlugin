@@ -1,0 +1,313 @@
+<script>
+(function () {
+    'use strict';
+
+    // The script is included by every print button; only the first copy registers its handlers.
+    if (window.zangraBarcodePrintLoaded) {
+        return;
+    }
+    window.zangraBarcodePrintLoaded = true;
+
+    var AGENT_TIMEOUT_MS = 3000;
+
+    function el(tag, attributes, children) {
+        var node = document.createElement(tag);
+        Object.keys(attributes || {}).forEach(function (name) {
+            if ('text' === name) {
+                node.textContent = attributes[name];
+            } else {
+                node.setAttribute(name, attributes[name]);
+            }
+        });
+        (children || []).forEach(function (child) {
+            node.appendChild(child);
+        });
+
+        return node;
+    }
+
+    function toast(message, type) {
+        var container = document.getElementById('zangra-barcode-print-toasts');
+        if (!container) {
+            container = el('div', {
+                id: 'zangra-barcode-print-toasts',
+                style: 'position:fixed;top:1rem;right:1rem;z-index:2000;max-width:28rem;',
+            });
+            document.body.appendChild(container);
+        }
+
+        var alert = el('div', {class: 'alert alert-' + type + ' alert-dismissible shadow', role: 'alert', text: message});
+        var close = el('button', {type: 'button', class: 'btn-close', 'aria-label': 'Close'});
+        close.addEventListener('click', function () { alert.remove(); });
+        alert.appendChild(close);
+        container.appendChild(alert);
+        window.setTimeout(function () { alert.remove(); }, 'success' === type ? 5000 : 12000);
+    }
+
+    function fetchWithTimeout(url, options, timeout) {
+        var controller = new AbortController();
+        var timer = window.setTimeout(function () { controller.abort(); }, timeout);
+        options = Object.assign({}, options, {signal: controller.signal});
+
+        return fetch(url, options).finally(function () { window.clearTimeout(timer); });
+    }
+
+    function PrintDialog(root) {
+        this.root = root;
+        this.config = JSON.parse(root.getAttribute('data-zangra-barcode-print'));
+        this.messages = this.config.messages;
+        this.dialog = null;
+    }
+
+    PrintDialog.prototype.open = function () {
+        if (null === this.dialog) {
+            this.build();
+        }
+        this.clearErrors();
+        this.dialog.showModal();
+    };
+
+    PrintDialog.prototype.currentTemplate = function () {
+        var code = this.templateSelect ? this.templateSelect.value : (this.config.templates[0] || {}).code;
+
+        return this.config.templates.filter(function (template) { return template.code === code; })[0] || null;
+    };
+
+    PrintDialog.prototype.build = function () {
+        var self = this;
+        var messages = this.messages;
+        var config = this.config;
+
+        this.form = el('form', {novalidate: 'novalidate'});
+        this.status = el('div', {class: 'text-muted small mt-2'});
+        this.templateSelect = null;
+
+        var body = el('div', {class: 'modal-body'});
+        if (0 === config.templates.length || 0 === config.printers.length) {
+            body.appendChild(el('div', {class: 'alert alert-warning mb-0', text: 0 === config.templates.length ? messages.no_templates : messages.no_printers}));
+        } else {
+            if (config.templates.length > 1) {
+                this.templateSelect = el('select', {class: 'form-select', name: 'template'});
+                config.templates.forEach(function (template) {
+                    this.templateSelect.appendChild(el('option', {value: template.code, text: template.name}));
+                }, this);
+                this.templateSelect.addEventListener('change', function () { self.renderVariables(); });
+                body.appendChild(this.field(messages.template, this.templateSelect));
+            }
+
+            this.printerSelect = el('select', {class: 'form-select', name: 'printer'});
+            config.printers.forEach(function (printer) {
+                this.printerSelect.appendChild(el('option', {value: printer.code, text: printer.name}));
+            }, this);
+            body.appendChild(this.field(messages.printer, this.printerSelect));
+
+            this.variables = el('div');
+            body.appendChild(this.variables);
+
+            this.quantity = el('input', {type: 'number', class: 'form-control', name: 'quantity', min: '1', max: '999', value: '1'});
+            body.appendChild(this.field(messages.quantity, this.quantity, 'quantity'));
+            body.appendChild(this.status);
+            this.renderVariables();
+        }
+
+        this.printButton = el('button', {type: 'submit', class: 'btn btn-primary', text: messages.print});
+        var cancel = el('button', {type: 'button', class: 'btn btn-link link-secondary', text: messages.cancel});
+        cancel.addEventListener('click', function () { self.dialog.close(); });
+        var footer = el('div', {class: 'modal-footer'}, [cancel]);
+        if (0 !== config.templates.length && 0 !== config.printers.length) {
+            footer.appendChild(this.printButton);
+        }
+
+        this.form.appendChild(el('div', {class: 'modal-header'}, [el('h5', {class: 'modal-title', text: messages.title})]));
+        this.form.appendChild(body);
+        this.form.appendChild(footer);
+        this.form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            self.submit();
+        });
+
+        this.dialog = el('dialog', {class: 'p-0 border-0 rounded shadow', style: 'width:min(32rem,95vw);'}, [this.form]);
+        this.dialog.addEventListener('click', function (event) {
+            if (event.target === self.dialog) {
+                self.dialog.close();
+            }
+        });
+        document.body.appendChild(this.dialog);
+    };
+
+    PrintDialog.prototype.field = function (label, input, key) {
+        var group = el('div', {class: 'mb-3', 'data-field': key || input.getAttribute('name') || ''});
+        group.appendChild(el('label', {class: 'form-label', text: label}));
+        group.appendChild(input);
+        group.appendChild(el('div', {class: 'invalid-feedback'}));
+
+        return group;
+    };
+
+    PrintDialog.prototype.renderVariables = function () {
+        var template = this.currentTemplate();
+        var defaults = this.config.defaults || {};
+        var config = this.config;
+        this.variables.textContent = '';
+        this.inputs = {};
+        if (null === template) {
+            return;
+        }
+
+        template.variables.forEach(function (variable) {
+            var provided = Object.prototype.hasOwnProperty.call(defaults, variable.key) ? defaults[variable.key] : variable.default;
+            var label = variable.label + (variable.required ? ' *' : '');
+            var input;
+
+            if ('icons' === variable.type) {
+                var selected = Array.isArray(provided) ? provided : String(provided || '').split(',').map(function (key) { return key.trim().toLowerCase(); });
+                input = el('div');
+                config.icons.forEach(function (icon) {
+                    var checkbox = el('input', {type: 'checkbox', class: 'form-check-input', value: icon});
+                    checkbox.checked = -1 !== selected.indexOf(icon);
+                    input.appendChild(el('label', {class: 'form-check form-check-inline'}, [checkbox, el('span', {class: 'form-check-label', text: icon.toUpperCase()})]));
+                });
+                input.getValue = function () {
+                    return Array.prototype.slice.call(input.querySelectorAll('input:checked')).map(function (checkbox) { return checkbox.value; });
+                };
+            } else {
+                input = el('input', {type: 'text', class: 'form-control', autocomplete: 'off'});
+                input.value = null === provided || undefined === provided ? '' : provided;
+                if ('ean13' === variable.type) {
+                    input.setAttribute('inputmode', 'numeric');
+                    input.setAttribute('maxlength', '13');
+                }
+                input.getValue = function () { return input.value; };
+            }
+
+            this.inputs[variable.key] = input;
+            this.variables.appendChild(this.field(label, input, variable.key));
+        }, this);
+    };
+
+    PrintDialog.prototype.clearErrors = function () {
+        if (null === this.dialog) {
+            return;
+        }
+        Array.prototype.forEach.call(this.dialog.querySelectorAll('.is-invalid'), function (node) { node.classList.remove('is-invalid'); });
+        Array.prototype.forEach.call(this.dialog.querySelectorAll('.invalid-feedback'), function (node) { node.textContent = ''; node.style.display = ''; });
+        this.status.textContent = '';
+    };
+
+    PrintDialog.prototype.showErrors = function (errors) {
+        var general = [];
+        Object.keys(errors).forEach(function (key) {
+            var group = this.dialog.querySelector('[data-field="' + key + '"]');
+            var feedback = group ? group.querySelector('.invalid-feedback') : null;
+            if (feedback) {
+                group.querySelector('input, select').classList.add('is-invalid');
+                feedback.textContent = errors[key];
+                feedback.style.display = 'block';
+            } else {
+                general.push(errors[key]);
+            }
+        }, this);
+        if (general.length) {
+            toast(general.join(' '), 'danger');
+        }
+    };
+
+    PrintDialog.prototype.setBusy = function (busy) {
+        this.printButton.disabled = busy;
+        this.status.textContent = busy ? this.messages.sending : '';
+    };
+
+    PrintDialog.prototype.payload = function () {
+        var template = this.currentTemplate();
+        var variables = {};
+        Object.keys(this.inputs).forEach(function (key) { variables[key] = this.inputs[key].getValue(); }, this);
+
+        return {
+            template: template.code,
+            printer: this.printerSelect.value,
+            quantity: parseInt(this.quantity.value, 10) || 0,
+            variables: variables,
+        };
+    };
+
+    PrintDialog.prototype.submit = function () {
+        var self = this;
+        this.clearErrors();
+        this.setBusy(true);
+
+        fetch(this.config.renderUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            body: JSON.stringify(this.payload()),
+        }).then(function (response) {
+            return response.json().catch(function () { return {}; }).then(function (data) { return {status: response.status, data: data}; });
+        }).then(function (result) {
+            if (422 === result.status && result.data.errors) {
+                self.showErrors(result.data.errors);
+
+                return null;
+            }
+            if (200 !== result.status) {
+                throw new Error(result.data.error || self.messages.request_failed);
+            }
+            if ('local_agent' === result.data.transport) {
+                return self.sendToAgent(result.data);
+            }
+
+            return true;
+        }).then(function (printed) {
+            if (printed) {
+                toast(self.messages.success, 'success');
+                self.dialog.close();
+            }
+        }).catch(function (error) {
+            toast(error.message || self.messages.request_failed, 'danger');
+        }).finally(function () {
+            self.setBusy(false);
+        });
+    };
+
+    PrintDialog.prototype.sendToAgent = function (job) {
+        var messages = this.messages;
+        var agent = job.agentUrl.replace(/\/+$/, '');
+
+        return fetchWithTimeout(agent + '/health', {method: 'GET'}, AGENT_TIMEOUT_MS).catch(function () {
+            throw new Error(messages.agent_not_running);
+        }).then(function () {
+            return fetchWithTimeout(agent + '/print', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({host: job.host, port: job.port, zpl: job.zpl}),
+            }, AGENT_TIMEOUT_MS * 4).catch(function () {
+                throw new Error(messages.agent_not_running);
+            });
+        }).then(function (response) {
+            if (204 === response.status || response.ok) {
+                return true;
+            }
+            if (403 === response.status) {
+                throw new Error(messages.agent_refused);
+            }
+            if (502 === response.status) {
+                throw new Error(messages.agent_printer_unreachable);
+            }
+
+            throw new Error(messages.request_failed);
+        });
+    };
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest ? event.target.closest('[data-zangra-barcode-print-open]') : null;
+        if (!button) {
+            return;
+        }
+
+        var root = button.closest('[data-zangra-barcode-print]');
+        if (!root.zangraBarcodePrint) {
+            root.zangraBarcodePrint = new PrintDialog(root);
+        }
+        root.zangraBarcodePrint.open();
+    });
+}());
+</script>

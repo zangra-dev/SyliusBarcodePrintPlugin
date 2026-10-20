@@ -1,0 +1,30 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h2 class="card-title">{{ 'zangra_barcode_print.form.template.variables'|trans }}</h2>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">{{ 'zangra_barcode_print.form.template.variables_help'|trans }}</p>
+        {{ form_errors(form.variables) }}
+
+        {% for variable_key, variable_form in form.variables %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-4">{{ form_row(variable_form.key) }}</div>
+                        <div class="col-12 col-md-5">{{ form_row(variable_form.label) }}</div>
+                        <div class="col-12 col-md-3">{{ form_row(variable_form.type) }}</div>
+                        <div class="col-12 col-md-6">{{ form_row(variable_form.defaultValue) }}</div>
+                        <div class="col-12 col-md-3">{{ form_row(variable_form.required) }}</div>
+                        <div class="col-12 col-md-3 text-end">
+                            {{ form_row(variable_form.vars.button_delete, {attr: {class: 'btn btn-outline-danger'}}) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        {{ form_row(form.variables.vars.button_add) }}
+    </div>
+</div>

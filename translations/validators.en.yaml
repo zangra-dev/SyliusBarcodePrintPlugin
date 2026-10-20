@@ -1,0 +1,33 @@
+zangra_barcode_print:
+    template:
+        code:
+            unique: A template with this code already exists.
+            not_blank: Please enter a code.
+            invalid: "The code may only contain letters, digits, dashes and underscores."
+        name:
+            not_blank: Please enter a name.
+        path:
+            not_blank: Please enter the template file path.
+            not_found: 'The template file "{{ path }}" was not found in "{{ directory }}".'
+        tokens:
+            undefined: "These tokens in the template file have no variable: {{ tokens }}."
+    variable:
+        key:
+            not_blank: Please enter a key.
+            invalid: "The key must start with a letter or underscore and contain only letters, digits and underscores."
+            reserved: 'The key "quantity" is reserved.'
+        label:
+            not_blank: Please enter a label.
+        default_value:
+            invalid_ean13: The default value is not a valid EAN-13 (13 digits with a valid check digit).
+    printer:
+        code:
+            unique: A printer with this code already exists.
+            not_blank: Please enter a code.
+            invalid: "The code may only contain letters, digits, dashes and underscores."
+        name:
+            not_blank: Please enter a name.
+        host:
+            not_blank: Please enter the printer host.
+        agent_url:
+            not_blank: Please enter the agent URL.

@@ -1,0 +1,33 @@
+zangra_barcode_print:
+    template:
+        code:
+            unique: Er bestaat al een sjabloon met deze code.
+            not_blank: Vul een code in.
+            invalid: "De code mag enkel letters, cijfers, streepjes en underscores bevatten."
+        name:
+            not_blank: Vul een naam in.
+        path:
+            not_blank: Vul het pad van het sjabloonbestand in.
+            not_found: 'Het sjabloonbestand "{{ path }}" werd niet gevonden in "{{ directory }}".'
+        tokens:
+            undefined: "Deze tokens in het sjabloonbestand hebben geen variabele: {{ tokens }}."
+    variable:
+        key:
+            not_blank: Vul een sleutel in.
+            invalid: "De sleutel moet beginnen met een letter of underscore en mag enkel letters, cijfers en underscores bevatten."
+            reserved: 'De sleutel "quantity" is gereserveerd.'
+        label:
+            not_blank: Vul een label in.
+        default_value:
+            invalid_ean13: De standaardwaarde is geen geldige EAN-13 (13 cijfers met een geldig controlecijfer).
+    printer:
+        code:
+            unique: Er bestaat al een printer met deze code.
+            not_blank: Vul een code in.
+            invalid: "De code mag enkel letters, cijfers, streepjes en underscores bevatten."
+        name:
+            not_blank: Vul een naam in.
+        host:
+            not_blank: Vul de host van de printer in.
+        agent_url:
+            not_blank: Vul de agent-URL in.

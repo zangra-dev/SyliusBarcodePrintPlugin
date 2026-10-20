@@ -1,0 +1,32 @@
+{% set barcode_print_config = {
+    renderUrl: path('zangra_barcode_print_admin_render'),
+    templates: this.templates,
+    printers: this.printers,
+    icons: this.icons,
+    defaults: this.defaults,
+    messages: {
+        title: 'zangra_barcode_print.print.title'|trans,
+        template: 'zangra_barcode_print.print.template'|trans,
+        printer: 'zangra_barcode_print.print.printer'|trans,
+        quantity: 'zangra_barcode_print.print.quantity'|trans,
+        print: 'zangra_barcode_print.print.print'|trans,
+        cancel: 'zangra_barcode_print.print.cancel'|trans,
+        sending: 'zangra_barcode_print.print.sending'|trans,
+        success: 'zangra_barcode_print.print.success'|trans,
+        no_templates: 'zangra_barcode_print.print.no_templates'|trans,
+        no_printers: 'zangra_barcode_print.print.no_printers'|trans,
+        agent_not_running: 'zangra_barcode_print.print.agent_not_running'|trans,
+        agent_refused: 'zangra_barcode_print.print.agent_refused'|trans,
+        agent_printer_unreachable: 'zangra_barcode_print.print.agent_printer_unreachable'|trans,
+        request_failed: 'zangra_barcode_print.print.request_failed'|trans,
+    },
+} %}
+
+<span class="zangra-barcode-print" data-zangra-barcode-print="{{ barcode_print_config|json_encode|e('html_attr') }}">
+    <button type="button" class="btn btn-outline-primary" data-zangra-barcode-print-open>
+        {{ ux_icon('tabler:printer', {class: 'icon icon-1'}) }}
+        {{ (this.label ?? 'zangra_barcode_print.print.button')|trans }}
+    </button>
+</span>
+
+{{ include('@ZangraSyliusBarcodePrintPlugin/admin/print_script.html.twig') }}

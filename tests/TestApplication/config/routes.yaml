@@ -1,0 +1,3 @@
+zangra_sylius_barcode_print_admin:
+    resource: "@ZangraSyliusBarcodePrintPlugin/config/routes/admin.yaml"
+    prefix: /admin

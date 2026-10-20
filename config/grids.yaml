@@ -1,0 +1,93 @@
+sylius_grid:
+    grids:
+        zangra_barcode_print_label_template:
+            driver:
+                name: doctrine/orm
+                options:
+                    class: Zangra\SyliusBarcodePrintPlugin\Entity\LabelTemplate
+            sorting:
+                name: asc
+            limits: [25, 50, 100]
+            fields:
+                code:
+                    type: string
+                    label: zangra_barcode_print.grid.code
+                    sortable: ~
+                name:
+                    type: string
+                    label: zangra_barcode_print.grid.name
+                    sortable: ~
+                path:
+                    type: string
+                    label: zangra_barcode_print.grid.path
+                    sortable: ~
+                enabled:
+                    type: twig
+                    label: zangra_barcode_print.grid.enabled
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
+                        vars:
+                            th_class: "w-1 text-center"
+            filters:
+                search:
+                    type: string
+                    label: sylius.ui.search
+                    options:
+                        fields: [code, name, path]
+            actions:
+                main:
+                    create:
+                        type: create
+                item:
+                    update:
+                        type: update
+                    delete:
+                        type: delete
+        zangra_barcode_print_label_printer:
+            driver:
+                name: doctrine/orm
+                options:
+                    class: Zangra\SyliusBarcodePrintPlugin\Entity\LabelPrinter
+            sorting:
+                name: asc
+            limits: [25, 50, 100]
+            fields:
+                code:
+                    type: string
+                    label: zangra_barcode_print.grid.code
+                    sortable: ~
+                name:
+                    type: string
+                    label: zangra_barcode_print.grid.name
+                    sortable: ~
+                host:
+                    type: string
+                    label: zangra_barcode_print.grid.host
+                    sortable: ~
+                port:
+                    type: string
+                    label: zangra_barcode_print.grid.port
+                transport:
+                    type: twig
+                    label: zangra_barcode_print.grid.transport
+                    sortable: ~
+                    options:
+                        template: "@ZangraSyliusBarcodePrintPlugin/admin/label_printer/grid/field/transport.html.twig"
+                enabled:
+                    type: twig
+                    label: zangra_barcode_print.grid.enabled
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
+                        vars:
+                            th_class: "w-1 text-center"
+            actions:
+                main:
+                    create:
+                        type: create
+                item:
+                    update:
+                        type: update
+                    delete:
+                        type: delete

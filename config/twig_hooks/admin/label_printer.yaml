@@ -1,0 +1,11 @@
+sylius_twig_hooks:
+    hooks:
+        'zangra_barcode_print.admin.label_printer.create.content.form.sections':
+            general:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_printer/form/general.html.twig'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_printer.update.content.form.sections':
+            general:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_printer/form/general.html.twig'
+                priority: 0

@@ -1,0 +1,26 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h2 class="card-title">{{ 'sylius.ui.general'|trans }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                {{ form_row(form.code) }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form_row(form.name) }}
+            </div>
+            <div class="col-12">
+                {{ form_row(form.path) }}
+                <div class="form-text mb-3">
+                    {{ 'zangra_barcode_print.templates_directory'|trans }}: <code>{{ zangra_barcode_print_templates_path }}</code>
+                </div>
+            </div>
+            <div class="col-12">
+                {{ form_row(form.enabled) }}
+            </div>
+        </div>
+    </div>
+</div>

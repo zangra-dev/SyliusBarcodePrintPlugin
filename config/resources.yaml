@@ -1,0 +1,12 @@
+sylius_resource:
+    resources:
+        zangra_barcode_print.label_template:
+            driver: doctrine/orm
+            classes:
+                model: Zangra\SyliusBarcodePrintPlugin\Entity\LabelTemplate
+                form: Zangra\SyliusBarcodePrintPlugin\Form\Type\LabelTemplateType
+        zangra_barcode_print.label_printer:
+            driver: doctrine/orm
+            classes:
+                model: Zangra\SyliusBarcodePrintPlugin\Entity\LabelPrinter
+                form: Zangra\SyliusBarcodePrintPlugin\Form\Type\LabelPrinterType

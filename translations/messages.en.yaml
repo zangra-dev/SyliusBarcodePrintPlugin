@@ -1,0 +1,61 @@
+zangra_barcode_print:
+    menu:
+        label_templates: Label templates
+        label_printers: Label printers
+    templates_directory: Templates directory
+    transport:
+        local_agent: Local agent (browser to Windows agent)
+        server_tcp: Server TCP (Sylius connects to the printer)
+    variable_type:
+        text: Text
+        ean13: EAN-13
+        icons: Icons
+    grid:
+        code: Code
+        name: Name
+        path: Template file
+        enabled: Enabled
+        host: Host
+        port: Port
+        transport: Transport
+    form:
+        enabled: Enabled
+        template:
+            code: Code
+            name: Name
+            path: Template file path
+            path_help: Path of the ZPL file, relative to the templates directory.
+            variables: Variables
+            variables_help: Every {{token}} used in the template file needs a variable here. The quantity token is built in.
+            add_variable: Add variable
+        variable:
+            key: Key
+            label: Label
+            type: Type
+            default_value: Default value
+            required: Required
+        printer:
+            code: Code
+            name: Name
+            host: Host (IP)
+            host_help: Address of the printer as seen from the agent (or from the server for the Server TCP transport).
+            port: Port
+            transport: Transport
+            transport_help: Local agent is used when the Sylius server cannot reach the printer.
+            agent_url: Agent URL
+    print:
+        button: Print label
+        title: Print label
+        template: Template
+        printer: Printer
+        quantity: Quantity
+        print: Print
+        cancel: Cancel
+        sending: Sending the label...
+        success: The label was sent to the printer.
+        no_templates: No label template is available. Create and enable one under Configuration.
+        no_printers: No printer is available. Create and enable one under Configuration.
+        agent_not_running: The print agent is not running on this computer. Start it and try again.
+        agent_refused: The print agent refused the job (origin or printer not allowed in agent.json).
+        agent_printer_unreachable: The print agent could not reach the printer.
+        request_failed: Printing failed. Please try again.

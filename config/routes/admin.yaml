@@ -1,0 +1,30 @@
+zangra_barcode_print_admin_label_template:
+    resource: |
+        alias: zangra_barcode_print.label_template
+        section: admin
+        templates: "@SyliusAdmin/shared/crud"
+        redirect: update
+        grid: zangra_barcode_print_label_template
+        except: ['show']
+        vars:
+            all:
+                hook_prefix: 'zangra_barcode_print.admin.label_template'
+    type: sylius.resource
+
+zangra_barcode_print_admin_label_printer:
+    resource: |
+        alias: zangra_barcode_print.label_printer
+        section: admin
+        templates: "@SyliusAdmin/shared/crud"
+        redirect: update
+        grid: zangra_barcode_print_label_printer
+        except: ['show']
+        vars:
+            all:
+                hook_prefix: 'zangra_barcode_print.admin.label_printer'
+    type: sylius.resource
+
+zangra_barcode_print_admin_render:
+    path: /barcode-print/render
+    methods: [POST]
+    controller: zangra_sylius_barcode_print.controller.print

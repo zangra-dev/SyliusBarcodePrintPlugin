@@ -1,0 +1,61 @@
+zangra_barcode_print:
+    menu:
+        label_templates: Labelsjablonen
+        label_printers: Labelprinters
+    templates_directory: Map met sjablonen
+    transport:
+        local_agent: Lokale agent (browser naar Windows-agent)
+        server_tcp: Server TCP (Sylius verbindt met de printer)
+    variable_type:
+        text: Tekst
+        ean13: EAN-13
+        icons: Pictogrammen
+    grid:
+        code: Code
+        name: Naam
+        path: Sjabloonbestand
+        enabled: Actief
+        host: Host
+        port: Poort
+        transport: Transport
+    form:
+        enabled: Actief
+        template:
+            code: Code
+            name: Naam
+            path: Pad van sjabloonbestand
+            path_help: Pad van het ZPL-bestand, relatief ten opzichte van de map met sjablonen.
+            variables: Variabelen
+            variables_help: Elke {{token}} in het sjabloonbestand heeft hier een variabele nodig. De token quantity is ingebouwd.
+            add_variable: Variabele toevoegen
+        variable:
+            key: Sleutel
+            label: Label
+            type: Type
+            default_value: Standaardwaarde
+            required: Verplicht
+        printer:
+            code: Code
+            name: Naam
+            host: Host (IP)
+            host_help: Adres van de printer zoals de agent het ziet (of de server bij het Server TCP-transport).
+            port: Poort
+            transport: Transport
+            transport_help: Lokale agent wordt gebruikt wanneer de Sylius-server de printer niet kan bereiken.
+            agent_url: Agent-URL
+    print:
+        button: Label printen
+        title: Label printen
+        template: Sjabloon
+        printer: Printer
+        quantity: Aantal
+        print: Printen
+        cancel: Annuleren
+        sending: Label wordt verstuurd...
+        success: Het label is naar de printer gestuurd.
+        no_templates: Er is geen labelsjabloon beschikbaar. Maak er een aan onder Configuratie.
+        no_printers: Er is geen printer beschikbaar. Maak er een aan onder Configuratie.
+        agent_not_running: De printagent draait niet op deze computer. Start hem en probeer opnieuw.
+        agent_refused: De printagent weigerde de opdracht (origin of printer niet toegestaan in agent.json).
+        agent_printer_unreachable: De printagent kon de printer niet bereiken.
+        request_failed: Printen is mislukt. Probeer opnieuw.

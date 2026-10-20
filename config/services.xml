@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<container
+        xmlns="http://symfony.com/schema/dic/services"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd"
+>
+    <services>
+        <service id="zangra_sylius_barcode_print.label.icon_registry" class="Zangra\SyliusBarcodePrintPlugin\Label\IconRegistry" />
+
+        <service id="zangra_sylius_barcode_print.label.template_file_locator" class="Zangra\SyliusBarcodePrintPlugin\Label\TemplateFileLocator">
+            <argument>%zangra_sylius_barcode_print.templates_path%</argument>
+        </service>
+
+        <service id="zangra_sylius_barcode_print.label.renderer" class="Zangra\SyliusBarcodePrintPlugin\Label\LabelRenderer">
+            <argument type="service" id="zangra_sylius_barcode_print.label.template_file_locator" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.icon_registry" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.label.transport.server_tcp" class="Zangra\SyliusBarcodePrintPlugin\Label\Transport\ServerTcpTransport" />
+
+        <service id="zangra_sylius_barcode_print.validator.template_file_exists" class="Zangra\SyliusBarcodePrintPlugin\Validator\TemplateFileExistsValidator">
+            <argument type="service" id="zangra_sylius_barcode_print.label.template_file_locator" />
+            <tag name="validator.constraint_validator" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.validator.all_tokens_defined" class="Zangra\SyliusBarcodePrintPlugin\Validator\AllTokensDefinedValidator">
+            <argument type="service" id="zangra_sylius_barcode_print.label.template_file_locator" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.renderer" />
+            <tag name="validator.constraint_validator" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.twig.templates_path_extension" class="Zangra\SyliusBarcodePrintPlugin\Twig\TemplatesPathExtension">
+            <argument>%zangra_sylius_barcode_print.templates_path%</argument>
+            <tag name="twig.extension" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.menu.admin_menu_listener" class="Zangra\SyliusBarcodePrintPlugin\Menu\AdminMenuListener">
+            <tag name="kernel.event_listener" event="sylius.menu.admin.main" method="addAdminMenuItems" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.twig.component.label_template_form" class="Sylius\Bundle\UiBundle\Twig\Component\ResourceFormComponent">
+            <argument type="service" id="zangra_barcode_print.repository.label_template" />
+            <argument type="service" id="form.factory" />
+            <argument>%zangra_barcode_print.model.label_template.class%</argument>
+            <argument>Zangra\SyliusBarcodePrintPlugin\Form\Type\LabelTemplateType</argument>
+            <tag name="sylius.live_component.admin" key="zangra_barcode_print:label_template:form" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.controller.print" class="Zangra\SyliusBarcodePrintPlugin\Controller\PrintController" public="true">
+            <argument type="service" id="zangra_barcode_print.repository.label_template" />
+            <argument type="service" id="zangra_barcode_print.repository.label_printer" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.renderer" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.transport.server_tcp" />
+            <argument type="service" id="security.authorization_checker" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.command.install_example" class="Zangra\SyliusBarcodePrintPlugin\Command\InstallExampleCommand">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <tag name="console.command" />
+        </service>
+
+        <service id="zangra_sylius_barcode_print.twig.component.print_button" class="Zangra\SyliusBarcodePrintPlugin\Twig\Component\PrintButtonComponent" shared="false">
+            <argument type="service" id="zangra_barcode_print.repository.label_template" />
+            <argument type="service" id="zangra_barcode_print.repository.label_printer" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.icon_registry" />
+            <tag name="twig.component" key="zangra_barcode_print:print_button" template="@ZangraSyliusBarcodePrintPlugin/admin/print_button.html.twig" />
+        </service>
+
+        <service id="Zangra\SyliusBarcodePrintPlugin\Label\LabelRenderer" alias="zangra_sylius_barcode_print.label.renderer" />
+        <service id="Zangra\SyliusBarcodePrintPlugin\Label\TemplateFileLocator" alias="zangra_sylius_barcode_print.label.template_file_locator" />
+        <service id="Zangra\SyliusBarcodePrintPlugin\Label\IconRegistry" alias="zangra_sylius_barcode_print.label.icon_registry" />
+        <service id="Zangra\SyliusBarcodePrintPlugin\Label\Transport\ServerTcpTransport" alias="zangra_sylius_barcode_print.label.transport.server_tcp" />
+    </services>
+</container>

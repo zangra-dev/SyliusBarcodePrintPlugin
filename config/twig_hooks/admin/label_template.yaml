@@ -1,0 +1,52 @@
+sylius_twig_hooks:
+    hooks:
+        'zangra_barcode_print.admin.label_template.index.content':
+            templates_path:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/index/templates_path.html.twig'
+                priority: 150
+
+        'zangra_barcode_print.admin.label_template.create.content':
+            form:
+                component: 'zangra_barcode_print:label_template:form'
+                props:
+                    resource: '@=_context.resource'
+                    form: '@=_context.form'
+                    template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form.html.twig'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_template.update.content':
+            form:
+                component: 'zangra_barcode_print:label_template:form'
+                props:
+                    resource: '@=_context.resource'
+                    form: '@=_context.form'
+                    template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form.html.twig'
+                configuration:
+                    method: 'PUT'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_template.create.content.form':
+            sections:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/sections.html.twig'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_template.update.content.form':
+            sections:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/sections.html.twig'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_template.create.content.form.sections':
+            general:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/general.html.twig'
+                priority: 100
+            variables:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/variables.html.twig'
+                priority: 0
+
+        'zangra_barcode_print.admin.label_template.update.content.form.sections':
+            general:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/general.html.twig'
+                priority: 100
+            variables:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/label_template/form/variables.html.twig'
+                priority: 0
