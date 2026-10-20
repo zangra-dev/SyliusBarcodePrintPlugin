@@ -8,6 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Sylius\Resource\Model\ResourceInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Url;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Zangra\SyliusBarcodePrintPlugin\Label\Transport\PrinterTransport;
 
 #[ORM\Entity]
@@ -48,11 +50,37 @@ class LabelPrinter implements ResourceInterface
 
     #[ORM\Column(name: 'agent_url', type: 'string', length: 255)]
     #[Assert\NotBlank(message: 'zangra_barcode_print.printer.agent_url.not_blank')]
-    #[Assert\Url(requireTld: false, protocols: ['http', 'https'])]
     protected string $agentUrl = self::DEFAULT_AGENT_URL;
 
     #[ORM\Column(type: 'boolean')]
     protected bool $enabled = true;
+
+    /**
+     * Equivalent of Assert\Url(requireTld: false, protocols: ['http', 'https']) without the `requireTld`
+     * option, which only exists since Symfony 7.1 (keeps compatibility with Symfony 6.4).
+     */
+    #[Assert\Callback]
+    public function validateAgentUrl(ExecutionContextInterface $context): void
+    {
+        $url = $this->agentUrl;
+        if ('' === $url) {
+            return;
+        }
+
+        $parts = parse_url($url);
+        $valid = false !== filter_var($url, \FILTER_VALIDATE_URL)
+            && \is_array($parts)
+            && \in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+            && '' !== (string) ($parts['host'] ?? '');
+
+        if (!$valid) {
+            $context->buildViolation('This value is not a valid URL.')
+                ->setTranslationDomain('validators')
+                ->atPath('agentUrl')
+                ->setCode(Url::INVALID_URL_ERROR)
+                ->addViolation();
+        }
+    }
 
     public function getId(): ?int
     {
