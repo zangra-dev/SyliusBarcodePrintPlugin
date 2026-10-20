@@ -20,3 +20,10 @@ doctrine:
                         type: attribute
                         dir: '%kernel.project_dir%/../../../tests/TestApplication/src/Entity'
                         prefix: Tests\Zangra\SyliusBarcodePrintPlugin
+
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.product_variant.update.content.header.title_block.actions':
+            barcode_print_button:
+                template: 'barcode_print_button.html.twig'
+                priority: 400

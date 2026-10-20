@@ -1,0 +1,6 @@
+{% set product_variant = hookable_metadata.context.resource %}
+
+{{ component('zangra_barcode_print:print_button', {
+    defaults: {code: product_variant.code, ean13: '5415249002848'},
+    templateCode: 'cable'
+}) }}
