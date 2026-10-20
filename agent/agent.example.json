@@ -1,7 +1,8 @@
 {
   "listen": "127.0.0.1:9101",
   "allowedOrigins": [
-    "https://admin.example.com"
+    "https://admin.example.com",
+    "http://localhost:8081"
   ],
   "allowedPrinters": [
     "172.16.0.22:9100"
