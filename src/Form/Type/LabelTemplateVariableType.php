@@ -27,6 +27,7 @@ final class LabelTemplateVariableType extends AbstractType
             ->add('type', EnumType::class, [
                 'class' => VariableType::class,
                 'label' => 'zangra_barcode_print.form.variable.type',
+                'empty_data' => VariableType::Text->value,
                 'choice_label' => static fn (VariableType $type): string => 'zangra_barcode_print.variable_type.' . $type->value,
             ])
             ->add('defaultValue', TextType::class, [
