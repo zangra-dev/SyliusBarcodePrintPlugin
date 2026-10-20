@@ -1,4 +1,7 @@
 zangra_barcode_print:
+    ui:
+        label_templates: Label templates
+        label_printers: Label printers
     menu:
         label_templates: Label templates
         label_printers: Label printers

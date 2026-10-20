@@ -1,0 +1,33 @@
+zangra_barcode_print:
+    template:
+        code:
+            unique: Un modèle avec ce code existe déjà.
+            not_blank: Veuillez saisir un code.
+            invalid: "Le code ne peut contenir que des lettres, des chiffres, des tirets et des underscores."
+        name:
+            not_blank: Veuillez saisir un nom.
+        path:
+            not_blank: Veuillez saisir le chemin du fichier de modèle.
+            not_found: 'Le fichier de modèle "{{ path }}" est introuvable dans "{{ directory }}".'
+        tokens:
+            undefined: "Ces jetons du fichier de modèle n'ont pas de variable : {{ tokens }}."
+    variable:
+        key:
+            not_blank: Veuillez saisir une clé.
+            invalid: "La clé doit commencer par une lettre ou un underscore et ne contenir que des lettres, des chiffres et des underscores."
+            reserved: 'La clé "quantity" est réservée.'
+        label:
+            not_blank: Veuillez saisir un libellé.
+        default_value:
+            invalid_ean13: La valeur par défaut n'est pas un EAN-13 valide (13 chiffres avec une clé de contrôle valide).
+    printer:
+        code:
+            unique: Une imprimante avec ce code existe déjà.
+            not_blank: Veuillez saisir un code.
+            invalid: "Le code ne peut contenir que des lettres, des chiffres, des tirets et des underscores."
+        name:
+            not_blank: Veuillez saisir un nom.
+        host:
+            not_blank: Veuillez saisir l'hôte de l'imprimante.
+        agent_url:
+            not_blank: Veuillez saisir l'URL de l'agent.

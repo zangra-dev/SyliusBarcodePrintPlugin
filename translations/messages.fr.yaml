@@ -1,0 +1,64 @@
+zangra_barcode_print:
+    ui:
+        label_templates: Modèles d'étiquettes
+        label_printers: Imprimantes d'étiquettes
+    menu:
+        label_templates: Modèles d'étiquettes
+        label_printers: Imprimantes d'étiquettes
+    templates_directory: Dossier des modèles
+    transport:
+        local_agent: Agent local (navigateur vers l'agent Windows)
+        server_tcp: Serveur TCP (Sylius se connecte à l'imprimante)
+    variable_type:
+        text: Texte
+        ean13: EAN-13
+        icons: Pictogrammes
+    grid:
+        code: Code
+        name: Nom
+        path: Fichier de modèle
+        enabled: Activé
+        host: Hôte
+        port: Port
+        transport: Transport
+    form:
+        enabled: Activé
+        template:
+            code: Code
+            name: Nom
+            path: Chemin du fichier de modèle
+            path_help: Chemin du fichier ZPL, relatif au dossier des modèles.
+            variables: Variables
+            variables_help: Chaque {{token}} utilisé dans le fichier de modèle nécessite une variable ici. Le jeton quantity est intégré.
+            add_variable: Ajouter une variable
+        variable:
+            key: Clé
+            label: Libellé
+            type: Type
+            default_value: Valeur par défaut
+            required: Obligatoire
+        printer:
+            code: Code
+            name: Nom
+            host: Hôte (IP)
+            host_help: Adresse de l'imprimante vue depuis l'agent (ou depuis le serveur pour le transport Serveur TCP).
+            port: Port
+            transport: Transport
+            transport_help: L'agent local est utilisé lorsque le serveur Sylius ne peut pas joindre l'imprimante.
+            agent_url: URL de l'agent
+    print:
+        button: Imprimer l'étiquette
+        title: Imprimer l'étiquette
+        template: Modèle
+        printer: Imprimante
+        quantity: Quantité
+        print: Imprimer
+        cancel: Annuler
+        sending: Envoi de l'étiquette...
+        success: L'étiquette a été envoyée à l'imprimante.
+        no_templates: Aucun modèle d'étiquette n'est disponible. Créez-en un et activez-le dans Configuration.
+        no_printers: Aucune imprimante n'est disponible. Créez-en une et activez-la dans Configuration.
+        agent_not_running: L'agent d'impression n'est pas démarré sur cet ordinateur. Démarrez-le et réessayez.
+        agent_refused: L'agent d'impression a refusé la tâche (origine ou imprimante non autorisée dans agent.json).
+        agent_printer_unreachable: L'agent d'impression n'a pas pu joindre l'imprimante.
+        request_failed: L'impression a échoué. Veuillez réessayer.
