@@ -1,32 +1,151 @@
-{% set barcode_print_config = {
-    renderUrl: path('zangra_barcode_print_admin_render'),
-    templates: this.templates,
-    printers: this.printers,
-    icons: this.icons,
-    defaults: this.defaults,
-    messages: {
-        title: 'zangra_barcode_print.print.title'|trans,
-        template: 'zangra_barcode_print.print.template'|trans,
-        printer: 'zangra_barcode_print.print.printer'|trans,
-        quantity: 'zangra_barcode_print.print.quantity'|trans,
-        print: 'zangra_barcode_print.print.print'|trans,
-        cancel: 'zangra_barcode_print.print.cancel'|trans,
+{% set templates = this.templates %}
+{% set printers = this.printers %}
+{% set rows = this.rows %}
+{% set batch = this.batch %}
+
+{% if not batch or rows is not empty %}
+    {% set messages = {
         sending: 'zangra_barcode_print.print.sending'|trans,
         success: 'zangra_barcode_print.print.success'|trans,
-        no_templates: 'zangra_barcode_print.print.no_templates'|trans,
-        no_printers: 'zangra_barcode_print.print.no_printers'|trans,
+        success_many: 'zangra_barcode_print.print.success_many'|trans,
+        none_selected: 'zangra_barcode_print.print.none_selected'|trans,
         agent_not_running: 'zangra_barcode_print.print.agent_not_running'|trans,
         agent_refused: 'zangra_barcode_print.print.agent_refused'|trans,
         agent_printer_unreachable: 'zangra_barcode_print.print.agent_printer_unreachable'|trans,
         request_failed: 'zangra_barcode_print.print.request_failed'|trans,
-    },
-} %}
+    } %}
+    {% set controller = 'zangra-barcode-print' %}
+    {% set ready = templates is not empty and printers is not empty %}
 
-<span class="zangra-barcode-print" data-zangra-barcode-print="{{ barcode_print_config|json_encode|e('html_attr') }}">
-    <button type="button" class="btn btn-outline-primary" data-zangra-barcode-print-open>
-        {{ ux_icon('tabler:printer', {class: 'icon icon-1'}) }}
-        {{ (this.label ?? 'zangra_barcode_print.print.button')|trans }}
-    </button>
-</span>
+    <span
+        class="zangra-barcode-print"
+        data-controller="{{ controller }}"
+        data-{{ controller }}-render-url-value="{{ path('zangra_barcode_print_admin_render') }}"
+        data-{{ controller }}-batch-value="{{ batch ? 'true' : 'false' }}"
+        data-{{ controller }}-templates-value="{{ templates|json_encode|e('html_attr') }}"
+        data-{{ controller }}-icons-value="{{ this.icons|json_encode|e('html_attr') }}"
+        data-{{ controller }}-defaults-value="{{ (this.defaults is empty ? '{}' : this.defaults|json_encode)|e('html_attr') }}"
+        data-{{ controller }}-messages-value="{{ messages|json_encode|e('html_attr') }}"
+    >
+        <button type="button" class="btn btn-outline-primary" data-action="{{ controller }}#open">
+            {{ ux_icon('tabler:printer', {class: 'icon icon-1'}) }}
+            {{ (this.label ?? 'zangra_barcode_print.print.button')|trans }}
+        </button>
 
-{{ include('@ZangraSyliusBarcodePrintPlugin/admin/print_script.html.twig') }}
+        <dialog
+            class="zangra-barcode-print__dialog p-0 border-0 rounded shadow"
+            data-{{ controller }}-target="dialog"
+            data-action="click->{{ controller }}#closeOnBackdrop keydown.enter->{{ controller }}#submitOnEnter"
+        >
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'zangra_barcode_print.print.title'|trans }}</h5>
+            </div>
+
+            <div class="modal-body">
+                {% if not ready %}
+                    <div class="alert alert-warning mb-0">
+                        {{ (templates is empty ? 'zangra_barcode_print.print.no_templates' : 'zangra_barcode_print.print.no_printers')|trans }}
+                    </div>
+                {% else %}
+                    {% if templates|length > 1 %}
+                        <div class="mb-3" data-field="template">
+                            <label class="form-label">{{ 'zangra_barcode_print.print.template'|trans }}</label>
+                            <select class="form-select" name="template" aria-label="{{ 'zangra_barcode_print.print.template'|trans }}" data-{{ controller }}-target="templateSelect" data-action="{{ controller }}#renderVariables">
+                                {% for template in templates %}
+                                    <option value="{{ template.code }}"{{ template.default ? ' selected' : '' }}>{{ template.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3" data-field="printer">
+                        <label class="form-label">{{ 'zangra_barcode_print.print.printer'|trans }}</label>
+                        <select class="form-select" name="printer" aria-label="{{ 'zangra_barcode_print.print.printer'|trans }}" data-{{ controller }}-target="printerSelect">
+                            {% for printer in printers %}
+                                <option value="{{ printer.code }}"{{ printer.default ? ' selected' : '' }}>{{ printer.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    {% if batch %}
+                        <div class="mb-3">
+                            <label class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" checked data-{{ controller }}-target="selectAll" data-action="{{ controller }}#toggleAll">
+                                <span class="form-check-label">{{ 'zangra_barcode_print.print.select_all'|trans }}</span>
+                            </label>
+                            <div class="zangra-barcode-print__rows">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>{{ 'zangra_barcode_print.print.code'|trans }}</th>
+                                            <th>{{ 'zangra_barcode_print.print.quantity'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in rows %}
+                                            <tr
+                                                data-{{ controller }}-target="row"
+                                                data-code="{{ row.code }}"
+                                                data-ean="{{ row.ean }}"
+                                                data-variables="{{ row.variables|json_encode|e('html_attr') }}"
+                                            >
+                                                <td class="zangra-barcode-print__cell-shrink">
+                                                    <input type="checkbox" class="form-check-input" checked aria-label="{{ row.code }}" data-role="select" data-action="{{ controller }}#syncSelectAll">
+                                                </td>
+                                                <td class="text-break">{{ row.code }}</td>
+                                                <td class="zangra-barcode-print__cell-shrink">
+                                                    <input type="number" class="form-control form-control-sm zangra-barcode-print__quantity" min="1" max="999" value="{{ row.quantity }}" aria-label="{{ 'zangra_barcode_print.print.quantity'|trans }}" data-role="quantity">
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div data-{{ controller }}-target="variables"></div>
+
+                        <div class="mb-3" data-field="quantity">
+                            <label class="form-label">{{ 'zangra_barcode_print.print.quantity'|trans }}</label>
+                            <input type="number" class="form-control" name="quantity" min="1" max="999" value="1" data-{{ controller }}-target="quantity">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <template data-{{ controller }}-target="fieldTemplate">
+                            <div class="mb-3" data-field>
+                                <label class="form-label" data-role="label"></label>
+                                <input type="text" class="form-control" autocomplete="off" data-role="input">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </template>
+                        <template data-{{ controller }}-target="iconsTemplate">
+                            <div class="mb-3" data-field>
+                                <label class="form-label" data-role="label"></label>
+                                <div data-role="input"></div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </template>
+                        <template data-{{ controller }}-target="iconTemplate">
+                            <label class="form-check form-check-inline">
+                                <input type="checkbox" class="form-check-input" data-role="input">
+                                <span class="form-check-label" data-role="label"></span>
+                            </label>
+                        </template>
+                    {% endif %}
+
+                    <div class="text-muted small mt-2" data-{{ controller }}-target="status"></div>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary" data-action="{{ controller }}#close">{{ 'zangra_barcode_print.print.cancel'|trans }}</button>
+                {% if ready %}
+                    <button type="button" class="btn btn-primary" data-{{ controller }}-target="printButton" data-action="{{ controller }}#submit">{{ 'zangra_barcode_print.print.print'|trans }}</button>
+                {% endif %}
+            </div>
+        </dialog>
+    </span>
+{% endif %}

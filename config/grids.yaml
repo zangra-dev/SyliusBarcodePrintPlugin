@@ -29,6 +29,14 @@ sylius_grid:
                         template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
                         vars:
                             th_class: "w-1 text-center"
+                default:
+                    type: twig
+                    label: zangra_barcode_print.grid.default
+                    sortable: isDefault
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
+                        vars:
+                            th_class: "w-1 text-center"
             filters:
                 search:
                     type: string
@@ -78,6 +86,14 @@ sylius_grid:
                     type: twig
                     label: zangra_barcode_print.grid.enabled
                     sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
+                        vars:
+                            th_class: "w-1 text-center"
+                default:
+                    type: twig
+                    label: zangra_barcode_print.grid.default
+                    sortable: isDefault
                     options:
                         template: "@SyliusAdmin/shared/grid/field/boolean.html.twig"
                         vars:

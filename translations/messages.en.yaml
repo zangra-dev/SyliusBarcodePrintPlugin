@@ -18,11 +18,13 @@ zangra_barcode_print:
         name: Name
         path: Template file
         enabled: Enabled
+        default: Default
         host: Host
         port: Port
         transport: Transport
     form:
         enabled: Enabled
+        default: Default
         template:
             code: Code
             name: Name
@@ -31,6 +33,7 @@ zangra_barcode_print:
             variables: Variables
             variables_help: Every {{token}} used in the template file needs a variable here. The quantity token is built in.
             add_variable: Add variable
+            default_help: "Preselected in the print dialog. Only one template can be the default."
         variable:
             key: Key
             label: Label
@@ -46,12 +49,17 @@ zangra_barcode_print:
             transport: Transport
             transport_help: Local agent is used when the Sylius server cannot reach the printer.
             agent_url: Agent URL
+            default_help: "Preselected in the print dialog. Only one printer can be the default."
     print:
         button: Print label
         title: Print label
         template: Template
         printer: Printer
         quantity: Quantity
+        code: Variant code
+        select_all: Select all
+        none_selected: Select at least one product to print.
+        success_many: '%count% labels were sent to the printer.'
         print: Print
         cancel: Cancel
         sending: Sending the label...

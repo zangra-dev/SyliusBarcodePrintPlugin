@@ -46,6 +46,9 @@ class LabelTemplate implements ResourceInterface, LabelTemplateInterface
     #[ORM\Column(type: 'boolean')]
     protected bool $enabled = true;
 
+    #[ORM\Column(name: 'is_default', type: 'boolean', options: ['default' => false])]
+    protected bool $isDefault = false;
+
     /** @var Collection<int, LabelTemplateVariable> */
     #[ORM\OneToMany(mappedBy: 'template', targetEntity: LabelTemplateVariable::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
@@ -100,6 +103,16 @@ class LabelTemplate implements ResourceInterface, LabelTemplateInterface
     public function setEnabled(bool $enabled): void
     {
         $this->enabled = $enabled;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
+    }
+
+    public function setDefault(bool $isDefault): void
+    {
+        $this->isDefault = $isDefault;
     }
 
     /** @return Collection<int, LabelTemplateVariable> */

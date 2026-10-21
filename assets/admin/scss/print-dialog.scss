@@ -1,0 +1,37 @@
+.zangra-barcode-print {
+    &__dialog {
+        width: min(32rem, calc(100vw - 3rem));
+        max-height: calc(100vh - 3rem);
+        margin: auto;
+
+        .modal-header,
+        .modal-footer {
+            padding: 1rem 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+    }
+
+    &__rows {
+        max-height: 40vh;
+        overflow: auto;
+    }
+
+    &__cell-shrink {
+        width: 1%;
+    }
+
+    &__quantity {
+        width: 6rem;
+    }
+}
+
+.zangra-barcode-print-toasts {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2000;
+    max-width: 28rem;
+}

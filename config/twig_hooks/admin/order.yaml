@@ -1,0 +1,6 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.order.show.content.header.title_block.actions':
+            zangra_barcode_print:
+                template: '@ZangraSyliusBarcodePrintPlugin/admin/order/print_button.html.twig'
+                priority: 50

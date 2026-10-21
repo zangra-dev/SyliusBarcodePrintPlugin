@@ -10,6 +10,7 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Zangra\SyliusBarcodePrintPlugin\Label\PrintableItemVariablesProviderInterface;
 
 final class ZangraSyliusBarcodePrintExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
@@ -19,6 +20,10 @@ final class ZangraSyliusBarcodePrintExtension extends AbstractResourceExtension 
     {
         $config = $this->processConfiguration(new Configuration(), $configs);
         $container->setParameter('zangra_sylius_barcode_print.templates_path', $config['templates_path']);
+        $container->setParameter('zangra_sylius_barcode_print.ean_property_path', $config['ean_property_path']);
+        $container->registerForAutoconfiguration(PrintableItemVariablesProviderInterface::class)
+            ->addTag(PrintableItemVariablesProviderInterface::TAG)
+        ;
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
 

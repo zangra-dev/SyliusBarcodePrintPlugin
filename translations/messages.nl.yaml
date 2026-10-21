@@ -18,11 +18,13 @@ zangra_barcode_print:
         name: Naam
         path: Sjabloonbestand
         enabled: Actief
+        default: Standaard
         host: Host
         port: Poort
         transport: Transport
     form:
         enabled: Actief
+        default: Standaard
         template:
             code: Code
             name: Naam
@@ -31,6 +33,7 @@ zangra_barcode_print:
             variables: Variabelen
             variables_help: Elke {{token}} in het sjabloonbestand heeft hier een variabele nodig. De token quantity is ingebouwd.
             add_variable: Variabele toevoegen
+            default_help: "Voorgeselecteerd in het afdrukvenster. Slechts één sjabloon kan de standaard zijn."
         variable:
             key: Sleutel
             label: Label
@@ -46,12 +49,17 @@ zangra_barcode_print:
             transport: Transport
             transport_help: Lokale agent wordt gebruikt wanneer de Sylius-server de printer niet kan bereiken.
             agent_url: Agent-URL
+            default_help: "Voorgeselecteerd in het afdrukvenster. Slechts één printer kan de standaard zijn."
     print:
         button: Label printen
         title: Label printen
         template: Sjabloon
         printer: Printer
         quantity: Aantal
+        code: Variantcode
+        select_all: Alles selecteren
+        none_selected: Selecteer minstens één product om af te drukken.
+        success_many: '%count% labels zijn naar de printer gestuurd.'
         print: Printen
         cancel: Annuleren
         sending: Label wordt verstuurd...

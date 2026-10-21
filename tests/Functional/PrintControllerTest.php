@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Zangra\SyliusBarcodePrintPlugin\Functional;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Core\Model\AdminUserInterface;
+use Sylius\Component\Core\Model\OrderInterface;
+use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Core\Model\ProductVariant;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
 use Zangra\SyliusBarcodePrintPlugin\Entity\LabelPrinter;
 use Zangra\SyliusBarcodePrintPlugin\Entity\LabelTemplate;
@@ -74,6 +79,22 @@ final class PrintControllerTest extends WebTestCase
         self::assertStringContainsString('^FDtextilecable.031.001^FS', $data['zpl']);
         self::assertStringContainsString('^PQ2,0,1,N', $data['zpl']);
         self::assertStringNotContainsString('{{', $data['zpl']);
+    }
+
+    public function testOmittedVariablesUseTheTemplateDefaults(): void
+    {
+        $this->createPrinter('tsc', PrinterTransport::LocalAgent);
+
+        $this->post(['template' => 'cable', 'printer' => 'tsc', 'quantity' => 1, 'variables' => ['code' => 'abc.001', 'ean13' => '5415249002848']]);
+        self::assertResponseStatusCodeSame(200);
+        $zpl = $this->json()['zpl'];
+        self::assertStringContainsString('^FDabc.001^FS', $zpl);
+        self::assertStringContainsString('^FDMade in Italy^FS', $zpl);
+        self::assertStringContainsString('^FDwww.zangra.com^FS', $zpl);
+
+        $this->post(['template' => 'cable', 'printer' => 'tsc', 'quantity' => 1, 'variables' => ['code' => 'abc.001', 'ean13' => '5415249002848', 'madeIn' => 'Made in Belgium']]);
+        self::assertResponseStatusCodeSame(200);
+        self::assertStringContainsString('^FDMade in Belgium^FS', $this->json()['zpl']);
     }
 
     public function testServerTcpPrinterSendsTheJobItself(): void
@@ -206,11 +227,10 @@ final class PrintControllerTest extends WebTestCase
         $twig = static::getContainer()->get('twig');
         $html = $twig->createTemplate("{{ component('zangra_barcode_print:print_button', {defaults: {code: 'abc.001', ean13: '5415249002848'}}) }}")->render();
 
-        self::assertStringContainsString('data-zangra-barcode-print=', $html);
-        self::assertStringContainsString('data-zangra-barcode-print-open', $html);
+        self::assertStringContainsString('data-controller="zangra-barcode-print"', $html);
+        self::assertStringContainsString('data-action="zangra-barcode-print#open"', $html);
 
-        preg_match('/data-zangra-barcode-print="([^"]+)"/', $html, $matches);
-        $config = json_decode(html_entity_decode($matches[1], \ENT_QUOTES), true, 512, \JSON_THROW_ON_ERROR);
+        $config = $this->buttonConfig($html);
         self::assertSame('/admin/barcode-print/render', $config['renderUrl']);
         self::assertSame(['cable', 'second'], array_column($config['templates'], 'code'));
         self::assertSame(['tsc'], array_column($config['printers'], 'code'));
@@ -219,9 +239,143 @@ final class PrintControllerTest extends WebTestCase
         self::assertCount(6, $config['templates'][0]['variables']);
 
         $filtered = $twig->createTemplate("{{ component('zangra_barcode_print:print_button', {templateCode: 'second'}) }}")->render();
-        preg_match('/data-zangra-barcode-print="([^"]+)"/', $filtered, $matches);
-        $config = json_decode(html_entity_decode($matches[1], \ENT_QUOTES), true, 512, \JSON_THROW_ON_ERROR);
+        $config = $this->buttonConfig($filtered);
         self::assertSame(['second'], array_column($config['templates'], 'code'));
+    }
+
+    public function testPrintButtonComponentRendersTheItemRows(): void
+    {
+        $this->createPrinter('tsc', PrinterTransport::LocalAgent);
+
+        /** @var Environment $twig */
+        $twig = static::getContainer()->get('twig');
+        $html = $twig->createTemplate("{{ component('zangra_barcode_print:print_button', {items: [{code: 'abc.001', ean: '5415249002848', quantity: 4, variables: {madeIn: 'Belgium', code: 'x', n: 1}}, {code: 'abc.002', ean: '4006381333931', quantity: 0}]}) }}")->render();
+
+        $config = $this->buttonConfig($html);
+        self::assertSame(['abc.001', 'abc.002'], array_column($config['items'], 'code'));
+        self::assertSame(['5415249002848', '4006381333931'], array_column($config['items'], 'ean'));
+        self::assertSame([4, 1], array_column($config['items'], 'quantity'));
+        self::assertSame([['madeIn' => 'Belgium'], []], array_column($config['items'], 'variables'));
+
+        $plain = $twig->createTemplate("{{ component('zangra_barcode_print:print_button') }}")->render();
+        self::assertSame([], $this->buttonConfig($plain)['items']);
+    }
+
+    public function testPrintButtonComponentListsThePrintableItemsOfAnOrder(): void
+    {
+        $this->createPrinter('tsc', PrinterTransport::LocalAgent);
+
+        $variant = new class() extends ProductVariant {
+            public ?string $ean = '5415249002848';
+        };
+        $variant->setCode('abc.001');
+        $plain = new ProductVariant();
+        $plain->setCode('abc.002');
+
+        /** @var Environment $twig */
+        $twig = static::getContainer()->get('twig');
+        $template = $twig->createTemplate("{{ component('zangra_barcode_print:print_button', {order: order}) }}");
+
+        $html = $template->render(['order' => $this->order([[$variant, 3], [$plain, 1]])]);
+        $config = $this->buttonConfig($html);
+        self::assertSame([['code' => 'abc.001', 'ean' => '5415249002848', 'quantity' => 3, 'variables' => []]], $config['items']);
+
+        // The batch dialog only offers printable items, a printer and a template: no label variable fields.
+        $crawler = new Crawler($html);
+        self::assertCount(0, $crawler->filter('template'));
+        self::assertCount(0, $crawler->filter('[data-field]:not([data-field="printer"]):not([data-field="template"])'));
+
+        // Without a printable item the button is not rendered.
+        $html = $template->render(['order' => $this->order([[$plain, 1]])]);
+        self::assertStringNotContainsString('data-controller="zangra-barcode-print"', $html);
+    }
+
+    /** @param list<array{ProductVariant, int}> $lines */
+    private function order(array $lines): OrderInterface
+    {
+        $items = [];
+        foreach ($lines as [$variant, $quantity]) {
+            $item = $this->createMock(OrderItemInterface::class);
+            $item->method('getVariant')->willReturn($variant);
+            $item->method('getQuantity')->willReturn($quantity);
+            $items[] = $item;
+        }
+        $order = $this->createMock(OrderInterface::class);
+        $order->method('getItems')->willReturn(new ArrayCollection($items));
+
+        return $order;
+    }
+
+    /** @return array<string, mixed> */
+    private function buttonConfig(string $html): array
+    {
+        $crawler = new Crawler($html);
+        $root = $crawler->filter('[data-controller="zangra-barcode-print"]');
+        self::assertCount(1, $root);
+
+        $value = static fn (string $name): mixed => json_decode((string) $root->attr('data-zangra-barcode-print-' . $name . '-value'), true, 512, \JSON_THROW_ON_ERROR);
+
+        return [
+            'renderUrl' => $root->attr('data-zangra-barcode-print-render-url-value'),
+            'batch' => 'true' === $root->attr('data-zangra-barcode-print-batch-value'),
+            'templates' => $value('templates'),
+            'icons' => $value('icons'),
+            'defaults' => $value('defaults'),
+            'messages' => $value('messages'),
+            'printers' => $crawler->filter('select[name="printer"] option')->each(static fn (Crawler $option): array => [
+                'code' => $option->attr('value'),
+                'default' => null !== $option->attr('selected'),
+            ]),
+            'items' => $crawler->filter('tr[data-code]')->each(static fn (Crawler $row): array => [
+                'code' => $row->attr('data-code'),
+                'ean' => $row->attr('data-ean'),
+                'quantity' => (int) $row->filter('[data-role="quantity"]')->attr('value'),
+                'variables' => json_decode((string) $row->attr('data-variables'), true, 512, \JSON_THROW_ON_ERROR),
+            ]),
+        ];
+    }
+
+    public function testOnlyOnePrinterAndOneTemplateCanBeTheDefault(): void
+    {
+        $first = $this->createPrinter('first', PrinterTransport::LocalAgent);
+        $second = $this->createPrinter('second', PrinterTransport::LocalAgent);
+        $first->setDefault(true);
+        $this->em->flush();
+        $second->setDefault(true);
+        $this->em->flush();
+        $this->em->clear();
+
+        $printers = $this->em->getRepository(LabelPrinter::class)->findBy([], ['code' => 'ASC']);
+        self::assertSame([false, true], array_map(static fn (LabelPrinter $printer): bool => $printer->isDefault(), $printers));
+
+        $other = $this->createTemplate('other', 'Other label');
+        $other->setDefault(true);
+        $this->em->flush();
+        $this->createTemplate('third', 'Third label')->setDefault(true);
+        $this->em->flush();
+        $this->em->clear();
+
+        $defaults = array_map(
+            static fn (LabelTemplate $template): string => (string) $template->getCode(),
+            $this->em->getRepository(LabelTemplate::class)->findBy(['isDefault' => true]),
+        );
+        self::assertSame(['third'], $defaults);
+    }
+
+    public function testPrintButtonComponentExposesTheDefaultFlag(): void
+    {
+        $this->createPrinter('plain', PrinterTransport::LocalAgent);
+        $this->createPrinter('main', PrinterTransport::LocalAgent)->setDefault(true);
+        $this->em->flush();
+
+        /** @var Environment $twig */
+        $twig = static::getContainer()->get('twig');
+        $html = $twig->createTemplate("{{ component('zangra_barcode_print:print_button') }}")->render();
+
+        $config = $this->buttonConfig($html);
+        $defaults = array_column($config['printers'], 'default', 'code');
+        self::assertSame(['main' => true, 'plain' => false], $defaults);
+        self::assertSame([false], array_column($config['templates'], 'default'));
     }
 
     /** @param array<string, mixed> $payload */

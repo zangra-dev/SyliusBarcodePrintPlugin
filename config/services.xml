@@ -47,6 +47,11 @@
             <tag name="sylius.live_component.admin" key="zangra_barcode_print:label_template:form" />
         </service>
 
+        <service id="zangra_sylius_barcode_print.event_listener.single_default" class="Zangra\SyliusBarcodePrintPlugin\EventListener\SingleDefaultListener">
+            <tag name="doctrine.event_listener" event="postPersist" />
+            <tag name="doctrine.event_listener" event="postUpdate" />
+        </service>
+
         <service id="zangra_sylius_barcode_print.controller.print" class="Zangra\SyliusBarcodePrintPlugin\Controller\PrintController" public="true">
             <argument type="service" id="zangra_barcode_print.repository.label_template" />
             <argument type="service" id="zangra_barcode_print.repository.label_printer" />
@@ -60,15 +65,23 @@
             <tag name="console.command" />
         </service>
 
+        <service id="zangra_sylius_barcode_print.label.printable_order_items" class="Zangra\SyliusBarcodePrintPlugin\Label\PrintableOrderItems">
+            <argument type="service" id="property_accessor" />
+            <argument>%zangra_sylius_barcode_print.ean_property_path%</argument>
+            <argument type="tagged_iterator" tag="zangra_sylius_barcode_print.item_variables_provider" />
+        </service>
+
         <service id="zangra_sylius_barcode_print.twig.component.print_button" class="Zangra\SyliusBarcodePrintPlugin\Twig\Component\PrintButtonComponent" shared="false">
             <argument type="service" id="zangra_barcode_print.repository.label_template" />
             <argument type="service" id="zangra_barcode_print.repository.label_printer" />
             <argument type="service" id="zangra_sylius_barcode_print.label.icon_registry" />
+            <argument type="service" id="zangra_sylius_barcode_print.label.printable_order_items" />
             <tag name="twig.component" key="zangra_barcode_print:print_button" template="@ZangraSyliusBarcodePrintPlugin/admin/print_button.html.twig" />
         </service>
 
         <service id="Zangra\SyliusBarcodePrintPlugin\Label\LabelRenderer" alias="zangra_sylius_barcode_print.label.renderer" />
         <service id="Zangra\SyliusBarcodePrintPlugin\Label\TemplateFileLocator" alias="zangra_sylius_barcode_print.label.template_file_locator" />
+        <service id="Zangra\SyliusBarcodePrintPlugin\Label\PrintableOrderItems" alias="zangra_sylius_barcode_print.label.printable_order_items" />
         <service id="Zangra\SyliusBarcodePrintPlugin\Label\IconRegistry" alias="zangra_sylius_barcode_print.label.icon_registry" />
         <service id="Zangra\SyliusBarcodePrintPlugin\Label\Transport\ServerTcpTransport" alias="zangra_sylius_barcode_print.label.transport.server_tcp" />
     </services>

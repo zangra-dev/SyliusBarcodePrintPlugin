@@ -32,6 +32,11 @@ final class LabelTemplateType extends AbstractType
                 'label' => 'zangra_barcode_print.form.enabled',
                 'required' => false,
             ])
+            ->add('default', CheckboxType::class, [
+                'label' => 'zangra_barcode_print.form.default',
+                'help' => 'zangra_barcode_print.form.template.default_help',
+                'required' => false,
+            ])
             ->add('variables', LiveCollectionType::class, [
                 'entry_type' => LabelTemplateVariableType::class,
                 'label' => false,

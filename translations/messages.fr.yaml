@@ -18,11 +18,13 @@ zangra_barcode_print:
         name: Nom
         path: Fichier de modèle
         enabled: Activé
+        default: Par défaut
         host: Hôte
         port: Port
         transport: Transport
     form:
         enabled: Activé
+        default: Par défaut
         template:
             code: Code
             name: Nom
@@ -31,6 +33,7 @@ zangra_barcode_print:
             variables: Variables
             variables_help: Chaque {{token}} utilisé dans le fichier de modèle nécessite une variable ici. Le jeton quantity est intégré.
             add_variable: Ajouter une variable
+            default_help: "Présélectionné dans la fenêtre d'impression. Un seul modèle peut être celui par défaut."
         variable:
             key: Clé
             label: Libellé
@@ -46,12 +49,17 @@ zangra_barcode_print:
             transport: Transport
             transport_help: L'agent local est utilisé lorsque le serveur Sylius ne peut pas joindre l'imprimante.
             agent_url: URL de l'agent
+            default_help: "Présélectionné dans la fenêtre d'impression. Une seule imprimante peut être celle par défaut."
     print:
         button: Imprimer l'étiquette
         title: Imprimer l'étiquette
         template: Modèle
         printer: Imprimante
         quantity: Quantité
+        code: Code de la variante
+        select_all: Tout sélectionner
+        none_selected: Sélectionnez au moins un produit à imprimer.
+        success_many: '%count% étiquettes ont été envoyées à l''imprimante.'
         print: Imprimer
         cancel: Annuler
         sending: Envoi de l'étiquette...

@@ -55,6 +55,9 @@ class LabelPrinter implements ResourceInterface
     #[ORM\Column(type: 'boolean')]
     protected bool $enabled = true;
 
+    #[ORM\Column(name: 'is_default', type: 'boolean', options: ['default' => false])]
+    protected bool $isDefault = false;
+
     /**
      * Equivalent of Assert\Url(requireTld: false, protocols: ['http', 'https']) without the `requireTld`
      * option, which only exists since Symfony 7.1 (keeps compatibility with Symfony 6.4).
@@ -155,6 +158,16 @@ class LabelPrinter implements ResourceInterface
     public function setEnabled(bool $enabled): void
     {
         $this->enabled = $enabled;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->isDefault;
+    }
+
+    public function setDefault(bool $isDefault): void
+    {
+        $this->isDefault = $isDefault;
     }
 
     public function __toString(): string

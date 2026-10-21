@@ -18,8 +18,11 @@
                     {{ 'zangra_barcode_print.templates_directory'|trans }}: <code>{{ zangra_barcode_print_templates_path }}</code>
                 </div>
             </div>
-            <div class="col-12">
+            <div class="col-12 col-md-6">
                 {{ form_row(form.enabled) }}
+            </div>
+            <div class="col-12 col-md-6">
+                {{ form_row(form.default) }}
             </div>
         </div>
     </div>
