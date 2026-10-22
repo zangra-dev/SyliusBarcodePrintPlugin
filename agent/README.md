@@ -84,20 +84,41 @@ Start-ScheduledTask -TaskName 'ZangraPrintAgent'
 
 Remove it with `Unregister-ScheduledTask -TaskName ZangraPrintAgent -Confirm:$false`.
 
-### Option B: Windows service with NSSM
+### Option B: Windows service with WinSW
 
-[NSSM](https://nssm.cc/) wraps a console program as a service. Run in an elevated terminal:
+`agent.exe` is a plain console program and does not speak the Windows service protocol, so `sc create` on its own does not work (the service fails to start with error 1053). [WinSW](https://github.com/winsw/winsw) wraps a console program as a service.
 
-```bat
-nssm install ZangraPrintAgent C:\ZangraAgent\agent.exe
-nssm set ZangraPrintAgent AppDirectory C:\ZangraAgent
-nssm set ZangraPrintAgent AppStderr C:\ZangraAgent\agent.log
-nssm set ZangraPrintAgent AppRotateFiles 1
-nssm set ZangraPrintAgent Start SERVICE_AUTO_START
-nssm start ZangraPrintAgent
+1. Download `WinSW-x64.exe` from the [WinSW releases](https://github.com/winsw/winsw/releases) and save it as `C:\ZangraAgent\ZangraPrintAgent.exe`.
+2. Create `C:\ZangraAgent\ZangraPrintAgent.xml` (same base name as the exe):
+
+```xml
+<service>
+  <id>ZangraPrintAgent</id>
+  <name>Zangra label print agent</name>
+  <description>Forwards ZPL from the browser to the label printer</description>
+  <executable>%BASE%\agent.exe</executable>
+  <arguments>-config %BASE%\agent.json</arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+  <startmode>Automatic</startmode>
+  <onfailure action="restart" delay="10 sec"/>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>
 ```
 
-The agent logs to stderr, which NSSM writes to `agent.log`.
+3. Run in an elevated terminal:
+
+```bat
+cd C:\ZangraAgent
+ZangraPrintAgent.exe install
+ZangraPrintAgent.exe start
+```
+
+The agent logs to stderr, which WinSW writes to `ZangraPrintAgent.err.log` (stdout goes to `ZangraPrintAgent.out.log`).
+
+Stop and remove it with `ZangraPrintAgent.exe stop` and `ZangraPrintAgent.exe uninstall`.
 
 ## Troubleshooting
 

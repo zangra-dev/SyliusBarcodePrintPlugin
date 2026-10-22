@@ -111,6 +111,13 @@ A printer and a label template can each be flagged as "default" in their admin f
 The print modal is rendered by Twig (`templates/admin/print_button.html.twig`), driven by a Stimulus controller (`assets/admin/controllers/print-dialog_controller.js`) and styled by `assets/admin/scss/print-dialog.scss`. The plugin entrypoint `assets/admin/entrypoint.js` starts its own Stimulus application, registers the controller and imports the styles, so the host application only has to build and load it. With the Sylius test application this is `plugin-admin-entry` (already loaded by its admin templates). In your own Sylius admin Webpack Encore config add the entry and load it in the admin layout (needs `@hotwired/stimulus` and the Sass loader):
 
 ```js
+// assets/admin/entrypoint.js
+
+import '@vendor/zangra/sylius-barcode-print-plugin/assets/admin/entrypoint';
+```
+or
+
+```js
 Encore.addEntry('plugin-admin-entry', path.resolve(__dirname, 'vendor/zangra/sylius-barcode-print-plugin/assets/admin/entrypoint.js'))
 ```
 
@@ -119,6 +126,7 @@ Encore.addEntry('plugin-admin-entry', path.resolve(__dirname, 'vendor/zangra/syl
 {{ encore_entry_script_tags('plugin-admin-entry', null, 'app.admin') }}
 {{ encore_entry_link_tags('plugin-admin-entry', null, 'app.admin') }}
 ```
+`yarn build` and clear the cache.
 
 ## Installation
 
